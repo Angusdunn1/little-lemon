@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, TextInput, StyleSheet, Image, TouchableOpacity, Text } from 'react-native';
+import { View, TextInput, StyleSheet, Image, TouchableOpacity, Text, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CheckBox } from 'react-native-elements';
 import * as ImagePicker from 'expo-image-picker';
@@ -35,7 +35,8 @@ export default function Profile() {
       const storedEmail = await AsyncStorage.getItem('email');
       const storedPhoneNumber = await AsyncStorage.getItem('phoneNumber');
       const storedNotifications = await AsyncStorage.getItem('notifications');
-
+      const storedAvatar = await AsyncStorage.getItem('profileImage'); // Load the avatar
+  
       setFirstName(storedFirstName || '');
       setLastName(storedLastName || '');
       setEmail(storedEmail || '');
@@ -43,10 +44,11 @@ export default function Profile() {
       if (storedNotifications) {
         setNotifications(JSON.parse(storedNotifications));
       }
+      setAvatar(storedAvatar || null); // Set the avatar state
     };
     loadData();
   }, []);
-
+  
   const saveChanges = async () => {
     try {
       await AsyncStorage.setItem('firstName', firstName || '');
@@ -54,11 +56,15 @@ export default function Profile() {
       await AsyncStorage.setItem('email', email || '');
       await AsyncStorage.setItem('phoneNumber', phoneNumber || '');
       await AsyncStorage.setItem('notifications', JSON.stringify(notifications));
+      if (avatar) {
+        await AsyncStorage.setItem('avatar', avatar); // Save avatar URI
+      }
       console.log('Changes saved!');
     } catch (error) {
       console.error('Failed to save changes:', error);
     }
   };
+   
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -79,6 +85,7 @@ export default function Profile() {
   };
 
   return (
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
     <View style={styles.container}>
       <TouchableOpacity onPress={pickImage}>
         {avatar ? (
@@ -147,12 +154,20 @@ export default function Profile() {
         <Text style={styles.logoutText}>Log Out</Text>
       </TouchableOpacity>
     </View>
+    </TouchableWithoutFeedback>
   );
 }
 
 const styles = StyleSheet.create({
   container: { padding: 16 },
-  avatar: { width: 100, height: 100, borderRadius: 50 },
+  avatar: { 
+    width: 100, 
+    height: 100, 
+    borderRadius: 50, 
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
   placeholder: {
     width: 100,
     height: 100,

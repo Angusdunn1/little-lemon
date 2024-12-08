@@ -1,8 +1,18 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, ScrollView, SafeAreaView,} from 'react-native';
+import React, { useEffect, useState, useCallback } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  Image,
+  TouchableOpacity,
+  ScrollView,
+  SafeAreaView,
+} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 
-// Define the MenuItem type outside the component
 interface MenuItem {
   name: string;
   price: number;
@@ -15,6 +25,8 @@ const Home = () => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [filteredItems, setFilteredItems] = useState<MenuItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [avatar, setAvatar] = useState<string | null>(null);
+  const [initials, setInitials] = useState<string>('');
   const router = useRouter();
 
   useEffect(() => {
@@ -24,8 +36,8 @@ const Home = () => {
           'https://raw.githubusercontent.com/Meta-Mobile-Developer-PC/Working-With-Data-API/main/capstone.json'
         );
         const data = await response.json();
-        setMenuItems(data.menu); // Use the exact order as in the JSON
-        setFilteredItems(data.menu); // Initialize with all items
+        setMenuItems(data.menu);
+        setFilteredItems(data.menu);
       } catch (error) {
         console.error('Error fetching menu items:', error);
       }
@@ -34,12 +46,35 @@ const Home = () => {
     fetchMenuItems();
   }, []);
 
+  useFocusEffect(
+    useCallback(() => {
+      const loadProfileData = async () => {
+        try {
+          const storedAvatar = await AsyncStorage.getItem('avatar');
+          const firstName = await AsyncStorage.getItem('firstName');
+          const lastName = await AsyncStorage.getItem('lastName');
+
+          setAvatar(storedAvatar);
+          setInitials(
+            `${firstName?.[0]?.toUpperCase() || ''}${lastName?.[0]?.toUpperCase() || ''}`
+          );
+        } catch (error) {
+          console.error('Error loading profile data:', error);
+        }
+      };
+
+      loadProfileData();
+    }, [])
+  );
+
   const filterItems = (category: string) => {
     setSelectedCategory(category);
     if (category === 'All') {
       setFilteredItems(menuItems);
     } else {
-      setFilteredItems(menuItems.filter((item) => item.category.toLowerCase() === category.toLowerCase()));
+      setFilteredItems(
+        menuItems.filter((item) => item.category.toLowerCase() === category.toLowerCase())
+      );
     }
   };
 
@@ -66,10 +101,13 @@ const Home = () => {
         <View style={styles.header}>
           <Text style={styles.logo}>🍋 Little Lemon</Text>
           <TouchableOpacity onPress={() => router.push('/profile')}>
-            <Image
-              source={require('../assets/images/react-logo.png')} // Replace with the actual avatar path
-              style={styles.avatar}
-            />
+            {avatar ? (
+              <Image source={{ uri: avatar }} style={styles.avatar} />
+            ) : (
+              <View style={[styles.avatar, styles.placeholder]}>
+                <Text style={styles.initials}>{initials}</Text>
+              </View>
+            )}
           </TouchableOpacity>
         </View>
 
@@ -155,6 +193,15 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  placeholder: {
+    backgroundColor: '#ccc',
+  },
+  initials: {
+    fontSize: 16,
+    color: '#fff',
   },
   heroSection: {
     flexDirection: 'row',

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -8,7 +8,20 @@ const Onboarding = () => {
   const [email, setEmail] = useState(''); // State for email
   const router = useRouter(); // Navigation using expo-router
 
+  const validateInput = () => {
+    if (!firstName.trim()) {
+      Alert.alert('Error', 'Please enter your first name.');
+      return false;
+    }
+    if (!email.trim() || !email.includes('@')) {
+      Alert.alert('Error', 'Please enter a valid email address.');
+      return false;
+    }
+    return true;
+  };
+
   const handleNext = async () => {
+    if (!validateInput()) return; // Stop if validation fails
     // Save first name and email to AsyncStorage
     await AsyncStorage.setItem('firstName', firstName || '');
     await AsyncStorage.setItem('email', email || '');
@@ -18,6 +31,7 @@ const Onboarding = () => {
   };
 
   return (
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
     <View style={styles.container}>
       {/* Logo and Title */}
       <View style={styles.header}>
@@ -49,6 +63,7 @@ const Onboarding = () => {
         <Text style={styles.buttonText}>Next</Text>
       </TouchableOpacity>
     </View>
+    </TouchableWithoutFeedback>
   );
 };
 

@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   ScrollView,
   SafeAreaView,
+  TextInput,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
@@ -25,6 +26,7 @@ const Home = () => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [filteredItems, setFilteredItems] = useState<MenuItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [searchQuery, setSearchQuery] = useState<string>(''); // Search query state
   const [avatar, setAvatar] = useState<string | null>(null);
   const [initials, setInitials] = useState<string>('');
   const router = useRouter();
@@ -67,15 +69,36 @@ const Home = () => {
     }, [])
   );
 
+  // Filter menu items by category and search query
   const filterItems = (category: string) => {
     setSelectedCategory(category);
-    if (category === 'All') {
-      setFilteredItems(menuItems);
-    } else {
-      setFilteredItems(
-        menuItems.filter((item) => item.category.toLowerCase() === category.toLowerCase())
+    let filtered = menuItems;
+    if (category !== 'All') {
+      filtered = filtered.filter(
+        (item) => item.category.toLowerCase() === category.toLowerCase()
       );
     }
+    if (searchQuery) {
+      filtered = filtered.filter((item) =>
+        item.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+    setFilteredItems(filtered);
+  };
+
+  // Update search query and filter items
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    const filtered = menuItems.filter((item) =>
+      item.name.toLowerCase().includes(query.toLowerCase())
+    );
+    setFilteredItems(
+      selectedCategory === 'All'
+        ? filtered
+        : filtered.filter(
+            (item) => item.category.toLowerCase() === selectedCategory.toLowerCase()
+          )
+    );
   };
 
   const renderMenuItem = ({ item }: { item: MenuItem }) => {
@@ -126,6 +149,16 @@ const Home = () => {
               uri: 'https://github.com/Meta-Mobile-Developer-PC/Working-With-Data-API/blob/main/images/bruschetta.jpg?raw=true',
             }}
             style={styles.heroImage}
+          />
+        </View>
+
+        {/* Search Bar */}
+        <View style={styles.searchContainer}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search for a dish..."
+            value={searchQuery}
+            onChangeText={handleSearch}
           />
         </View>
 
@@ -235,6 +268,18 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginLeft: 16,
   },
+  searchContainer: {
+    paddingHorizontal: 16,
+    marginVertical: 8,
+  },
+  searchInput: {
+    height: 40,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    fontSize: 16,
+  },
   filtersContainer: {
     backgroundColor: '#EDEFEE',
     paddingVertical: 8,
@@ -310,7 +355,6 @@ const styles = StyleSheet.create({
 });
 
 export default Home;
-
 
 
 

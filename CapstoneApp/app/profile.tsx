@@ -1,18 +1,25 @@
 import React, { useEffect, useState } from 'react';
-import { View, TextInput, StyleSheet, Image, TouchableOpacity, Text,} from 'react-native';
+import { View, TextInput, StyleSheet, Image, TouchableOpacity, Text } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CheckBox } from 'react-native-elements';
 import * as ImagePicker from 'expo-image-picker';
 import { MaskedTextInput } from 'react-native-mask-text';
 import { useRouter } from 'expo-router';
 
+interface Notifications {
+  OrderStatuses: boolean;
+  PasswordChanges: boolean;
+  SpecialOffers: boolean;
+  Newsletter: boolean;
+}
+
 export default function Profile() {
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [avatar, setAvatar] = useState(null);
-  const [notifications, setNotifications] = useState({
+  const [firstName, setFirstName] = useState<string>('');
+  const [lastName, setLastName] = useState<string>('');
+  const [email, setEmail] = useState<string>('');
+  const [phoneNumber, setPhoneNumber] = useState<string>('');
+  const [avatar, setAvatar] = useState<string | null>(null);
+  const [notifications, setNotifications] = useState<Notifications>({
     OrderStatuses: true,
     PasswordChanges: true,
     SpecialOffers: true,
@@ -41,12 +48,16 @@ export default function Profile() {
   }, []);
 
   const saveChanges = async () => {
-    await AsyncStorage.setItem('firstName', firstName || '');
-    await AsyncStorage.setItem('lastName', lastName || '');
-    await AsyncStorage.setItem('email', email || '');
-    await AsyncStorage.setItem('phoneNumber', phoneNumber || '');
-    await AsyncStorage.setItem('notifications', JSON.stringify(notifications));
-    console.log('Changes saved!');
+    try {
+      await AsyncStorage.setItem('firstName', firstName || '');
+      await AsyncStorage.setItem('lastName', lastName || '');
+      await AsyncStorage.setItem('email', email || '');
+      await AsyncStorage.setItem('phoneNumber', phoneNumber || '');
+      await AsyncStorage.setItem('notifications', JSON.stringify(notifications));
+      console.log('Changes saved!');
+    } catch (error) {
+      console.error('Failed to save changes:', error);
+    }
   };
 
   const pickImage = async () => {
@@ -106,37 +117,35 @@ export default function Profile() {
         value={phoneNumber}
         onChangeText={setPhoneNumber}
       />
-    <Text style={styles.notificationPref}>Notification Preferences:</Text>
-    <View>
-      {Object.keys(notifications).map((key) => (
-        <View key={key} style={styles.checkboxContainer}>
-          <CheckBox
-            title={key.replace(/([A-Z])/g, ' $1')} // Convert camelCase to readable text
-            checked={notifications[key]}
-            onPress={() =>
-              setNotifications((prev) => ({
-                ...prev,
-                [key]: !prev[key], // Toggle the checkbox value
-              }))
-            }
-            // Custom styles for the checkbox
-            checkedIcon="dot-circle-o" // Example checked icon (FontAwesome style)
-            uncheckedIcon="circle-o" // Example unchecked icon
-            checkedColor="#F4CE14" // Custom color for checked state
-            uncheckedColor="#495E57" // Custom color for unchecked state
-            containerStyle={styles.checkboxContainerStyle} // Custom container style
-            textStyle={styles.checkboxTextStyle} // Custom text style
-          />
-        </View>
-      ))}
-    </View >
-    <TouchableOpacity style={styles.saveButton} onPress={saveChanges}>
-      <Text style={styles.saveText}>Save Changes</Text>
-    </TouchableOpacity>
-    <TouchableOpacity style={styles.logoutButton} onPress={logout}>
-      <Text style={styles.logoutText}>Log Out</Text>
-    </TouchableOpacity>
-
+      <Text style={styles.notificationPref}>Notification Preferences:</Text>
+      <View>
+        {Object.keys(notifications).map((key) => (
+          <View key={key} style={styles.checkboxContainer}>
+            <CheckBox
+              title={key.replace(/([A-Z])/g, ' $1')} // Convert camelCase to readable text
+              checked={notifications[key as keyof Notifications]}
+              onPress={() =>
+                setNotifications((prev) => ({
+                  ...prev,
+                  [key]: !prev[key as keyof Notifications], // Toggle the checkbox value
+                }))
+              }
+              checkedIcon="dot-circle-o" // Example checked icon (FontAwesome style)
+              uncheckedIcon="circle-o" // Example unchecked icon
+              checkedColor="#F4CE14" // Custom color for checked state
+              uncheckedColor="#495E57" // Custom color for unchecked state
+              containerStyle={styles.checkboxContainerStyle} // Custom container style
+              textStyle={styles.checkboxTextStyle} // Custom text style
+            />
+          </View>
+        ))}
+      </View>
+      <TouchableOpacity style={styles.saveButton} onPress={saveChanges}>
+        <Text style={styles.saveText}>Save Changes</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.logoutButton} onPress={logout}>
+        <Text style={styles.logoutText}>Log Out</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -154,9 +163,10 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   initials: { fontSize: 24, color: '#fff' },
-  input: { borderWidth: 1, 
-    padding: 10, 
-    marginBottom: 16, 
+  input: {
+    borderWidth: 1,
+    padding: 10,
+    marginBottom: 16,
     borderRadius: 8,
   },
   checkboxContainer: {
